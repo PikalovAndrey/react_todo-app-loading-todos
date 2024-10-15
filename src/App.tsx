@@ -40,7 +40,7 @@ export const App: React.FC = () => {
     }
   }, [errorMessage]);
 
-  const handleTodoDelete = (todoId: number) => {
+  const handleTodoDelete = useCallback((todoId: number) => {
     deleteTodos(todoId)
       .then(() => {
         setTodos(currentTodos =>
@@ -50,13 +50,13 @@ export const App: React.FC = () => {
       .catch(() => {
         setErrorMessage(ErrorMessages.DELETING_ERROR);
       });
-  };
+  }, []);
 
   const handleCompletedTodosDeleted = useCallback(() => {
     setTodos(currentTodos => currentTodos.filter(todo => !todo.completed));
   }, []);
 
-  const handleTodosToggle = () => {
+  const handleTodosToggle = useCallback(() => {
     const hasIncompleteTodos = todos.some(todo => !todo.completed);
 
     setTodos(currentTodos =>
@@ -65,14 +65,17 @@ export const App: React.FC = () => {
         completed: hasIncompleteTodos,
       })),
     );
-  };
+  }, [todos]);
 
   const todosAfterFiltering = useMemo(
     () => filteredTodos(todos, filter),
     [todos, filter],
   );
 
-  const completedTodos = todos.filter(todo => todo.completed);
+  const completedTodos = useMemo(
+    () => todos.filter(todo => todo.completed),
+    [todos],
+  );
 
   return (
     <div className="todoapp">
