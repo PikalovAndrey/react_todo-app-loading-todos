@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteTodos, getTodos } from './api/todos';
 import { Todo } from './types/Todo';
 import classNames from 'classnames';
@@ -16,14 +16,15 @@ export const App: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState(ErrorMessages.NO_ERRORS);
 
   useEffect(() => {
-    const loadTodos = async () => {
-      try {
-        const loadedTodos = await getTodos();
-
-        setTodos(loadedTodos);
-      } catch (error) {
-        setErrorMessage(ErrorMessages.LOADING_ERROR);
-      }
+    const loadTodos = () => {
+      getTodos()
+        .then(loadedTodos => {
+          setTodos(loadedTodos);
+        })
+        .catch(error => {
+          setErrorMessage(ErrorMessages.LOADING_ERROR);
+          throw new Error(error);
+        });
     };
 
     loadTodos();
@@ -51,9 +52,9 @@ export const App: React.FC = () => {
       });
   };
 
-  const handleCompletedTodosDeleted = () => {
+  const handleCompletedTodosDeleted = useCallback(() => {
     setTodos(currentTodos => currentTodos.filter(todo => !todo.completed));
-  };
+  }, []);
 
   const handleTodosToggle = () => {
     const hasIncompleteTodos = todos.some(todo => !todo.completed);
@@ -66,7 +67,10 @@ export const App: React.FC = () => {
     );
   };
 
-  const todosAfterFiltering = filteredTodos(todos, filter);
+  const todosAfterFiltering = useMemo(
+    () => filteredTodos(todos, filter),
+    [todos, filter],
+  );
 
   const completedTodos = todos.filter(todo => todo.completed);
 
@@ -86,7 +90,7 @@ export const App: React.FC = () => {
           onTodoDelete={handleTodoDelete}
         />
 
-        {todos.length > 0 && (
+        {!!todos.length && (
           <Footer
             todos={todos}
             completedTodos={completedTodos}
